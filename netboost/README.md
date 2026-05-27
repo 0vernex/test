@@ -15,13 +15,13 @@ Download **Termux** from F-Droid (recommended) or Play Store
 
 ### Step 2 — One-liner to download and run NetBoost
 ```bash
-curl -O https://raw.githubusercontent.com/0vernex/test/main/netboost/netboost.sh && bash netboost.sh
+curl -O https://raw.githubusercontent.com/0vernex/test/claude/phone-internet-strength-EXWNT/netboost/netboost.sh && bash netboost.sh
 ```
 
 ### Or manually:
 ```bash
 pkg install curl -y
-curl -O https://raw.githubusercontent.com/0vernex/test/main/netboost/netboost.sh
+curl -O https://raw.githubusercontent.com/0vernex/test/claude/phone-internet-strength-EXWNT/netboost/netboost.sh
 bash netboost.sh
 ```
 
