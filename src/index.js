@@ -37,37 +37,51 @@ const lobbies = new Map();
 
 const JOIN_ID = 'lfg_join';
 const LEAVE_ID = 'lfg_leave';
+const DISBAND_ID = 'lfg_disband';
 
-function buildButtons() {
+// Valorant 5-stack: a lobby can hold at most 5 players.
+const MAX_PLAYERS = 5;
+
+function buildButtons(isFull) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(JOIN_ID)
-      .setLabel('Play')
+      .setLabel(isFull ? 'Full' : 'Play')
       .setEmoji('🎮')
-      .setStyle(ButtonStyle.Success),
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(isFull),
     new ButtonBuilder()
       .setCustomId(LEAVE_ID)
       .setLabel('Leave')
       .setEmoji('🚪')
       .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(DISBAND_ID)
+      .setLabel('Disband')
+      .setEmoji('🛑')
+      .setStyle(ButtonStyle.Secondary),
   );
 }
 
 // Turn a lobby's players into the image + embed payload we send/edit.
 async function buildLobbyPayload(lobby) {
   const players = [...lobby.players.values()];
+  const isFull = players.length >= MAX_PLAYERS;
   const png = await renderLobby({ title: 'Looking to Play', players });
   const file = new AttachmentBuilder(png, { name: 'lobby.png' });
 
   const names = players.map((p) => `• ${p.username}`).join('\n') || '*No one yet*';
   const embed = new EmbedBuilder()
-    .setColor(0x5865f2)
+    .setColor(isFull ? 0x57f287 : 0x5865f2)
     .setTitle('🎮 Looking to Play')
-    .setDescription(`**Players (${players.length}):**\n${names}`)
+    .setDescription(
+      `**Players (${players.length}/${MAX_PLAYERS}):**\n${names}` +
+        (isFull ? '\n\n**Stack is full! 🔒**' : ''),
+    )
     .setImage('attachment://lobby.png')
-    .setFooter({ text: 'Press Play to join • Press Leave to drop out' });
+    .setFooter({ text: 'Play to join • Leave to drop out • Disband (creator only) to close' });
 
-  return { embeds: [embed], files: [file], components: [buildButtons()] };
+  return { embeds: [embed], files: [file], components: [buildButtons(isFull)] };
 }
 
 function userToPlayer(user) {
@@ -89,6 +103,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } else if (interaction.isButton()) {
       if (interaction.customId === JOIN_ID) await handleJoin(interaction);
       else if (interaction.customId === LEAVE_ID) await handleLeave(interaction);
+      else if (interaction.customId === DISBAND_ID) await handleDisband(interaction);
     }
   } catch (err) {
     console.error('Interaction error:', err);
@@ -151,6 +166,13 @@ async function handleJoin(interaction) {
     });
   }
 
+  if (lobby.players.size >= MAX_PLAYERS) {
+    return interaction.reply({
+      content: `This stack is full (${MAX_PLAYERS}/${MAX_PLAYERS}). Wait for a spot to open up.`,
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
   lobby.players.set(interaction.user.id, userToPlayer(interaction.user));
 
   // Re-render the image with everyone and update the same message in place.
@@ -189,6 +211,33 @@ async function handleLeave(interaction) {
 
   const payload = await buildLobbyPayload(lobby);
   await interaction.update(payload);
+}
+
+async function handleDisband(interaction) {
+  const lobby = lobbies.get(interaction.message.id);
+  if (!lobby) {
+    return interaction.reply({
+      content: 'This lobby is no longer active.',
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  // Workaround for Discord's shared buttons: the Disband button is visible to
+  // everyone, but only the person who created the lobby is allowed to use it.
+  if (interaction.user.id !== lobby.ownerId) {
+    return interaction.reply({
+      content: 'Only the lobby creator can disband this lobby.',
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  lobbies.delete(interaction.message.id);
+  return interaction.update({
+    content: '*This lobby was disbanded by the creator.*',
+    embeds: [],
+    files: [],
+    components: [],
+  });
 }
 
 client.login(DISCORD_TOKEN);

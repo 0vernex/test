@@ -6,6 +6,10 @@ with their profile picture as a circle and a **Play** button. Others press
 and they can press **Leave** to drop out. The lobby image re-renders every
 time someone joins or leaves.
 
+Lobbies are capped at **5 players** (a Valorant stack); once full the Play
+button greys out. The lobby **creator** can press **Disband** to close it at
+any time (other people pressing Disband get a private "creator only" notice).
+
 ![example lobby](docs/example.png)
 
 > **Note about the buttons:** Discord buttons are shared by *everyone* who
@@ -111,7 +115,8 @@ You should see `Logged in as <name>. Ready!`. Now go to your
 
 - **Persistence:** lobbies live in memory and reset when the bot restarts.
   Swap the `lobbies` Map for a database (SQLite/Redis) to survive restarts.
-- **Player cap:** stop joins after N players.
+- **Player cap:** currently 5 (the `MAX_PLAYERS` constant in `src/index.js`) —
+  change it for other games.
 - **Auto-expire:** close a lobby after some minutes of inactivity.
 - **Hosting:** run it 24/7 on a small VPS, Railway, Fly.io, etc. (keep your
   `.env` secret — never commit it).
