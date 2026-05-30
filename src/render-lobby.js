@@ -15,11 +15,11 @@ try {
   console.warn('Could not load Achafont.ttf, falling back to sans-serif:', err.message);
 }
 
-const AVATAR_SIZE = 128; // diameter of each circular avatar
-const GAP = 24; // horizontal space between avatars
-const PADDING = 32; // padding around the whole box
-const HEADER_HEIGHT = 64; // space reserved for the title at the top
-const NAME_HEIGHT = 34; // space reserved for the username under each avatar
+const AVATAR_SIZE = 88; // diameter of each circular avatar
+const GAP = 16; // horizontal space between avatars
+const PADDING = 22; // padding around the whole box
+const HEADER_HEIGHT = 44; // space reserved for the title at the top
+const NAME_HEIGHT = 26; // space reserved for the username under each avatar
 
 /**
  * Draws a single image cropped into a circle at (cx, cy) center.
@@ -75,7 +75,7 @@ async function renderLobby({ title = 'Looking to Play', players }) {
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `36px "${FONT_FAMILY}", sans-serif`;
+  ctx.font = `26px "${FONT_FAMILY}", sans-serif`;
   ctx.fillText(title, width / 2, PADDING + HEADER_HEIGHT / 2);
 
   // Draw each player's avatar in a row.
@@ -100,7 +100,7 @@ async function renderLobby({ title = 'Looking to Play', players }) {
 
     // Username under the avatar (trimmed so it doesn't overflow).
     ctx.fillStyle = '#dbdee1';
-    ctx.font = `20px "${FONT_FAMILY}", sans-serif`;
+    ctx.font = `16px "${FONT_FAMILY}", sans-serif`;
     let name = player.username;
     if (name.length > 12) name = name.slice(0, 11) + '…';
     ctx.fillText(name, cx, cy + AVATAR_SIZE / 2 + NAME_HEIGHT / 2 + 4);
