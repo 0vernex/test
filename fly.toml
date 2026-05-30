@@ -1,0 +1,19 @@
+# Fly.io configuration for the Looking-2-Play Discord bot.
+#
+# `fly launch` will set `app` to a unique name for you (and may change the
+# region). This bot is a background worker: it makes an OUTBOUND connection to
+# Discord and serves no inbound HTTP, so there is intentionally no
+# [http_service] block and no health checks — the machine just stays running.
+
+app = "looking2play-bot"
+primary_region = "iad"
+
+[build]
+
+[processes]
+  app = "npm start"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpus = 1

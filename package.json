@@ -1,0 +1,17 @@
+{
+  "name": "looking2play-bot",
+  "version": "1.0.0",
+  "description": "A Discord 'Looking to Play' (LFG) bot with circular avatar lobby images.",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.65",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
+  }
+}
