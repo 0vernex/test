@@ -79,18 +79,15 @@ function buildButtons(isFull) {
     new ButtonBuilder()
       .setCustomId(JOIN_ID)
       .setLabel(isFull ? 'Full' : 'Join')
-      .setEmoji('🎮')
       .setStyle(ButtonStyle.Success) // green background
       .setDisabled(isFull),
     new ButtonBuilder()
       .setCustomId(LEAVE_ID)
       .setLabel('Leave')
-      .setEmoji('🚪')
       .setStyle(ButtonStyle.Danger), // red background
     new ButtonBuilder()
       .setCustomId(DISBAND_ID)
       .setLabel('Disband')
-      .setEmoji('🛑')
       .setStyle(ButtonStyle.Secondary),
   );
 }
@@ -99,7 +96,7 @@ function buildButtons(isFull) {
 async function buildLobbyPayload(lobby) {
   const players = [...lobby.players.values()];
   const isFull = players.length >= MAX_PLAYERS;
-  const png = await renderLobby({ title: 'Looking to Play', players });
+  const png = await renderLobby({ players });
   const file = new AttachmentBuilder(png, { name: 'lobby.png' });
 
   const names = players.map((p) => `• ${p.username}`).join('\n') || '*No one yet*';
@@ -440,7 +437,7 @@ async function handleDisband(interaction) {
 
   await closeLobby(interaction.message.id);
   return interaction.update({
-    content: '*This lobby was disbanded by the creator.*',
+    content: 'This party is disbanded.',
     embeds: [],
     files: [],
     components: [],

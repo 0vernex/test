@@ -15,11 +15,10 @@ try {
   console.warn('Could not load Achafont.ttf, falling back to sans-serif:', err.message);
 }
 
-const AVATAR_SIZE = 88; // diameter of each circular avatar
-const GAP = 16; // horizontal space between avatars
-const PADDING = 22; // padding around the whole box
-const HEADER_HEIGHT = 44; // space reserved for the title at the top
-const NAME_HEIGHT = 26; // space reserved for the username under each avatar
+const AVATAR_SIZE = 64; // diameter of each circular avatar
+const GAP = 12; // horizontal space between avatars
+const PADDING = 14; // padding around the whole box
+const NAME_HEIGHT = 20; // space reserved for the username under each avatar
 
 /**
  * Draws a single image cropped into a circle at (cx, cy) center.
@@ -46,21 +45,22 @@ function drawCircularAvatar(ctx, image, cx, cy, size) {
 }
 
 /**
- * Renders the lobby as a PNG buffer.
- * @param {{title?: string, players: Array<{username: string, avatarURL: string}>}} opts
+ * Renders the lobby as a PNG buffer: a compact left-to-right row of circular
+ * avatars with each username beneath. No title.
+ * @param {{players: Array<{username: string, avatarURL: string}>}} opts
  * @returns {Promise<Buffer>}
  */
-async function renderLobby({ title = 'Looking to Play', players }) {
+async function renderLobby({ players }) {
   const count = Math.max(players.length, 1);
 
   const width = PADDING * 2 + count * AVATAR_SIZE + (count - 1) * GAP;
-  const height = PADDING * 2 + HEADER_HEIGHT + AVATAR_SIZE + NAME_HEIGHT;
+  const height = PADDING * 2 + AVATAR_SIZE + NAME_HEIGHT;
 
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
   // Rounded dark background "box".
-  const radius = 24;
+  const radius = 16;
   ctx.fillStyle = '#2b2d31';
   ctx.beginPath();
   ctx.moveTo(radius, 0);
@@ -71,19 +71,15 @@ async function renderLobby({ title = 'Looking to Play', players }) {
   ctx.closePath();
   ctx.fill();
 
-  // Title text, centered.
-  ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `26px "${FONT_FAMILY}", sans-serif`;
-  ctx.fillText(title, width / 2, PADDING + HEADER_HEIGHT / 2);
 
   // Draw each player's avatar in a row.
   for (let i = 0; i < players.length; i++) {
     const player = players[i];
     const x = PADDING + i * (AVATAR_SIZE + GAP);
     const cx = x + AVATAR_SIZE / 2;
-    const cy = PADDING + HEADER_HEIGHT + AVATAR_SIZE / 2;
+    const cy = PADDING + AVATAR_SIZE / 2;
 
     try {
       const image = await loadImage(player.avatarURL);
@@ -100,10 +96,10 @@ async function renderLobby({ title = 'Looking to Play', players }) {
 
     // Username under the avatar (trimmed so it doesn't overflow).
     ctx.fillStyle = '#dbdee1';
-    ctx.font = `16px "${FONT_FAMILY}", sans-serif`;
+    ctx.font = `13px "${FONT_FAMILY}", sans-serif`;
     let name = player.username;
-    if (name.length > 12) name = name.slice(0, 11) + '…';
-    ctx.fillText(name, cx, cy + AVATAR_SIZE / 2 + NAME_HEIGHT / 2 + 4);
+    if (name.length > 10) name = name.slice(0, 9) + '…';
+    ctx.fillText(name, cx, cy + AVATAR_SIZE / 2 + NAME_HEIGHT / 2 + 2);
   }
 
   return canvas.encode('png');
