@@ -6,9 +6,14 @@ with their profile picture as a circle and a **Play** button. Others press
 and they can press **Leave** to drop out. The lobby image re-renders every
 time someone joins or leaves.
 
-Lobbies are capped at **5 players** (a Valorant stack); once full the Play
+Lobbies are capped at **5 players** (a Valorant stack); once full the Join
 button greys out. The lobby **creator** can press **Disband** to close it at
 any time (other people pressing Disband get a private "creator only" notice).
+
+Each lobby also gets its own **private voice channel** named `L2p-1`, `L2p-2`,
+… (numbered by how many lobbies are open) that only the lobby's members can
+see and join. A lobby that sits with no one but the creator for **1 hour**
+auto-expires; the moment anyone joins, that expiry is cancelled for good.
 
 ![example lobby](docs/example.png)
 
@@ -49,6 +54,11 @@ You do **not** need any "Privileged Gateway Intents" for this bot.
    - **Embed Links**
    - **Attach Files**
    - **Use Slash Commands**
+   - **Manage Channels** ← needed to create each lobby's voice channel
+   - **Move Members** (optional, only if you later auto-move people into the VC)
+
+   > If the bot can't create voice channels, double-check it has **Manage
+   > Channels**. Without it the lobby still works, it just won't get a VC.
 4. Copy the generated URL, open it in your browser, and add the bot to your server.
 
 ## Step 3 — Create the role and channel
@@ -108,15 +118,18 @@ You should see `Logged in as <name>. Ready!`. Now go to your
   - On `/play` it builds a lobby (the caller is the first player) and posts the
     image + embed + Play/Leave buttons.
   - It keeps each lobby in memory keyed by the message ID.
-  - On **Play**, it adds the clicker and re-renders; on **Leave**, it removes
-    them. If everyone leaves, the lobby closes.
+  - On **Join**, it adds the clicker, grants them voice-channel access and
+    re-renders; on **Leave**, it removes them. If everyone leaves, the lobby
+    (and its voice channel) closes.
+  - On creation it spins up a private `L2p-<n>` voice channel and starts a
+    1-hour expiry timer that's cancelled permanently as soon as someone joins.
 
 ## Things you might want to add next
 
 - **Persistence:** lobbies live in memory and reset when the bot restarts.
   Swap the `lobbies` Map for a database (SQLite/Redis) to survive restarts.
 - **Player cap:** currently 5 (the `MAX_PLAYERS` constant in `src/index.js`) —
-  change it for other games.
-- **Auto-expire:** close a lobby after some minutes of inactivity.
+  change it for other games. The expiry window is the `EXPIRY_MS` constant.
+- **Auto-move:** drop joined players straight into the VC (needs Move Members).
 - **Hosting:** run it 24/7 on a small VPS, Railway, Fly.io, etc. (keep your
   `.env` secret — never commit it).
