@@ -34,7 +34,15 @@ if (!DISCORD_TOKEN) {
 
 // Slash commands, buttons and channel management all work with just the
 // Guilds intent — no privileged intents to toggle in the dev portal.
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// GuildVoiceStates lets us see who's connected to a voice channel, so the
+// startup cleanup can avoid deleting a lobby VC that still has people in it.
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+});
+
+// Lobby voice channels are always named exactly "L2p-<number>". We only ever
+// touch channels matching this pattern, never any other voice channels.
+const LOBBY_VC_PATTERN = /^L2p-\d+$/;
 
 // In-memory store of active lobbies, keyed by the lobby message ID.
 // Each lobby: {
@@ -154,8 +162,32 @@ async function closeLobby(messageId) {
   if (lobby.number) usedNumbers.delete(lobby.number);
 
   if (lobby.vcId) {
-    const ch = lobby.guild.channels.cache.get(lobby.vcId);
+    const ch =
+      lobby.guild.channels.cache.get(lobby.vcId) ??
+      (await lobby.guild.channels.fetch(lobby.vcId).catch(() => null));
     if (ch) await ch.delete('Lobby closed').catch(() => {});
+  }
+}
+
+// Sweep up leftover "L2p-<n>" voice channels that no active lobby owns — e.g.
+// orphans left behind after the bot restarts (which clears its in-memory
+// lobbies). Empty channels only; if anyone is connected, we leave it alone.
+async function cleanupOrphanLobbyChannels() {
+  const tracked = new Set(
+    [...lobbies.values()].map((l) => l.vcId).filter(Boolean),
+  );
+
+  for (const guild of client.guilds.cache.values()) {
+    const channels = await guild.channels.fetch().catch(() => null);
+    if (!channels) continue;
+
+    for (const ch of channels.values()) {
+      if (!ch || ch.type !== ChannelType.GuildVoice) continue;
+      if (!LOBBY_VC_PATTERN.test(ch.name)) continue;
+      if (tracked.has(ch.id)) continue;
+      if (ch.members.size > 0) continue; // someone's in it — don't touch it
+      await ch.delete('Cleaning up orphaned L2p lobby channel').catch(() => {});
+    }
   }
 }
 
@@ -197,6 +229,9 @@ async function registerCommands(appId) {
 
 client.once(Events.ClientReady, async (c) => {
   await registerCommands(c.user.id);
+  await cleanupOrphanLobbyChannels().catch((e) =>
+    console.error('Orphan VC cleanup failed:', e),
+  );
   console.log(`Logged in as ${c.user.tag}. Ready!`);
 });
 

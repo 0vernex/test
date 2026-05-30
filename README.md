@@ -194,6 +194,10 @@ To stop paying / take it offline: `fly apps destroy <your-app-name>`.
     (and its voice channel) closes.
   - On creation it spins up a private `L2p-<n>` voice channel and starts a
     1-hour expiry timer that's cancelled permanently as soon as someone joins.
+  - Disbanding/closing a lobby deletes its `L2p-<n>` voice channel. On startup
+    it also sweeps up any leftover **empty** `L2p-<n>` channels orphaned by a
+    restart (channels with people still in them are left untouched). It only
+    ever touches channels named `L2p-<n>` — never other voice channels.
 
 ## Things you might want to add next
 
