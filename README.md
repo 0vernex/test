@@ -105,6 +105,77 @@ npm start
 You should see `Logged in as <name>. Ready!`. Now go to your
 `#Looking-2-play` channel and type `/play`. 🎉
 
+> **Note:** the bot **auto-registers** `/play` on startup, so you usually don't
+> need `npm run deploy` at all — just `npm start` (locally) or deploy to a host
+> (below). `npm run deploy` is only kept as a manual fallback.
+
+---
+
+## Run it 24/7 on Fly.io (so it doesn't stop when your PC is off)
+
+Running `npm start` on your own computer only keeps the bot online while that
+terminal is open. To keep it running forever, host it. Your repo already
+includes a `Dockerfile` and `fly.toml`, so deploying to [Fly.io](https://fly.io)
+is a handful of commands. **You do not need to run the bot locally at all** —
+it registers its command on startup.
+
+### One-time setup
+
+1. **Install the Fly CLI** (`flyctl`): follow
+   <https://fly.io/docs/flyctl/install/>. Then sign up / log in:
+   ```bash
+   fly auth signup   # or: fly auth login
+   ```
+   (Fly requires a card on file, but a single small bot like this costs only a
+   few cents to ~a couple dollars a month.)
+
+2. **Create the app** from inside the project folder. This reads the included
+   `fly.toml`, picks a unique app name, and sets up the app **without deploying
+   yet**:
+   ```bash
+   fly launch --no-deploy --copy-config
+   ```
+   - When asked to copy the existing configuration → **Yes**.
+   - When asked to tweak settings / add a database / Redis → **No**.
+
+3. **Add your secrets** (these replace the `.env` file in the cloud — never
+   commit real secrets). At minimum the token and your server ID:
+   ```bash
+   fly secrets set \
+     DISCORD_TOKEN="your-bot-token" \
+     GUILD_ID="your-server-id" \
+     REQUIRED_ROLE_NAME="looking2play" \
+     LFG_CHANNEL_ID="your-channel-id"
+   ```
+   (Omit `REQUIRED_ROLE_NAME` / `LFG_CHANNEL_ID` if you don't want those
+   restrictions. `CLIENT_ID` is **not** needed in the cloud — the bot figures
+   out its own application ID at runtime.)
+
+### Deploy
+
+```bash
+fly deploy
+```
+
+Watch the logs to confirm it came up:
+
+```bash
+fly logs
+```
+
+You're looking for `Registered /play in guild ...` and `Logged in as ... Ready!`.
+That's it — the bot now runs 24/7 with your computer off. 🎉
+
+### Updating later
+
+Whenever you change the code (or merge the PR), redeploy with:
+
+```bash
+fly deploy
+```
+
+To stop paying / take it offline: `fly apps destroy <your-app-name>`.
+
 ---
 
 ## How it works (the code)

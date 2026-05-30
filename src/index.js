@@ -13,12 +13,16 @@ const {
   MessageFlags,
   ChannelType,
   PermissionFlagsBits,
+  REST,
+  Routes,
 } = require('discord.js');
 
 const { renderLobby } = require('./render-lobby');
+const { commands } = require('./commands');
 
 const {
   DISCORD_TOKEN,
+  GUILD_ID,
   REQUIRED_ROLE_NAME,
   LFG_CHANNEL_ID,
 } = process.env;
@@ -172,7 +176,27 @@ async function expireLobby(messageId) {
   }
 }
 
-client.once(Events.ClientReady, (c) => {
+// Register the /play command automatically on startup, so the bot is fully
+// self-contained when hosted — no manual `npm run deploy` needed. If GUILD_ID
+// is set we register to that one server (instant); otherwise globally (slower
+// to propagate, up to ~1 hour, but works across every server the bot is in).
+async function registerCommands(appId) {
+  const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
+  try {
+    if (GUILD_ID) {
+      await rest.put(Routes.applicationGuildCommands(appId, GUILD_ID), { body: commands });
+      console.log(`Registered /play in guild ${GUILD_ID}.`);
+    } else {
+      await rest.put(Routes.applicationCommands(appId), { body: commands });
+      console.log('Registered /play globally (may take up to an hour to appear).');
+    }
+  } catch (err) {
+    console.error('Command registration failed:', err);
+  }
+}
+
+client.once(Events.ClientReady, async (c) => {
+  await registerCommands(c.user.id);
   console.log(`Logged in as ${c.user.tag}. Ready!`);
 });
 

@@ -1,11 +1,13 @@
 'use strict';
 
-// Run this once (and again whenever you change the command definition):
+// Optional manual command registration:
 //   npm run deploy
-// It tells Discord that the /play command exists in your server.
+// You normally DON'T need this — the bot auto-registers /play on startup
+// (see src/index.js). This script is here for one-off manual registration.
 
 require('dotenv').config();
-const { REST, Routes, SlashCommandBuilder } = require('discord.js');
+const { REST, Routes } = require('discord.js');
+const { commands } = require('./commands');
 
 const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
 
@@ -13,13 +15,6 @@ if (!DISCORD_TOKEN || !CLIENT_ID || !GUILD_ID) {
   console.error('Missing DISCORD_TOKEN, CLIENT_ID, or GUILD_ID in your .env file.');
   process.exit(1);
 }
-
-const commands = [
-  new SlashCommandBuilder()
-    .setName('play')
-    .setDescription('Open a "looking to play" lobby that others can join.')
-    .toJSON(),
-];
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
